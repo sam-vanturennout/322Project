@@ -1,5 +1,5 @@
 """
-Programmer: Cooper Braun
+Programmer: Cooper Braun Sam Vanturennout
 Class: CPSC 322-01, Fall 2025
 Final Project
 12/1/25
@@ -442,3 +442,28 @@ def binary_f1_score(y_true, y_pred, labels=None, pos_label=None):
         return 0.0
     
     return 2 * (precision * recall) / (precision + recall)
+
+def cross_val_predict_labels(X, y, clf, n_splits=10, stratified = True, random_state=None):
+    """
+    Perform k-fold cross validation and return the predicted labels for each instance.
+
+   """
+    n_samples = len(X)
+    y_pred = [None] * n_samples
+    if stratified:
+        folds = stratified_kfold_split(X, y, n_splits=n_splits, random_state=random_state, shuffle=True)
+    else:
+        folds = kfold_split(X, n_splits=n_splits, random_state=random_state, shuffle=True)
+
+    for train_indices, test_indices in folds:
+        X_train = [X[i] for i in train_indices]
+        y_train = [y[i] for i in train_indices]
+        X_test = [X[i] for i in test_indices]
+
+        clf.fit(X_train, y_train)
+        y_test_pred = clf.predict(X_test)
+
+        for i, index in enumerate(test_indices):
+            y_pred[index] = y_test_pred[i]
+
+    return y_pred
