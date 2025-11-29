@@ -9,6 +9,7 @@ evaluation shortcuts like reusable cross-validation logic for feature subsets.
 """
 
 import math
+import random
 from collections import Counter
 from mysklearn import evaluation
 
@@ -152,9 +153,193 @@ def tdidt(X, y, available_attributes, attribute_domains, default_label, parent_a
     return node
 
 
+def build_random_tree(X, y, rng=None, max_features=None):
+    """
+    Build a decision tree using random attribute subsets at each split.
+    
+    Args:
+        X(list of list of obj): The list of training instances (samples).
+            The shape of X is (n_train_samples, n_features)
+        y(list of obj): The target y values (parallel to X).
+            The shape of y is n_train_samples
+        rng(Random): The random number generator to use for random attribute selection.
+        max_features(int): The maximum number of features to consider for each split.
+
+    Returns:
+        tuple: (tree, default_label)
+            tree(list): The decision tree represented as a nested list.
+            default_label(obj): The default label for the tree.
+    """
+    if not X or not y:
+        return None, None
+
+    attribute_domains = build_attribute_domains(X)
+    default_label, _ = majority_label(y)
+    attributes = list(range(len(X[0])))
+    tree = tdidt_random(
+        X,
+        y,
+        attributes,
+        attribute_domains,
+        default_label,
+        len(y),
+        rng=rng,
+        max_features=max_features
+    )
+    return tree, default_label
+
+
+def tdidt_random(
+    X,
+    y,
+    available_attributes,
+    attribute_domains,
+    default_label,
+    parent_attribute_size,
+    rng=None,
+    max_features=None
+):
+    """
+    Build a decision tree using TDIDT with random attribute selection.
+    
+    Args:
+        X(list of list of obj): The list of training instances (samples).
+            The shape of X is (n_train_samples, n_features)
+        y(list of obj): The target y values (parallel to X).
+            The shape of y is n_train_samples
+        available_attributes(list of int): The list of available attributes to consider for each split.
+        attribute_domains(dict): The domains of the attributes.
+        default_label(obj): The default label for the tree.
+        parent_attribute_size(int): The size of the parent attribute.
+        rng(Random): The random number generator to use for random attribute selection.
+        max_features(int): The maximum number of features to consider for each split.
+
+    Returns:
+        list: The decision tree represented as a nested list.
+            The decision tree is represented as a nested list.
+            The first element of the list is "Attribute".
+            The second element of the list is the name of the attribute.
+            The third element of the list is the value of the attribute.
+            The fourth element of the list is the subtree.
+            The fifth element of the list is the default label.
+            The sixth element of the list is the parent attribute size.
+    """
+    if not y:
+        return ["Leaf", default_label, 0, parent_attribute_size]
+
+    unique_labels = set(y)
+    if len(unique_labels) == 1:
+        return ["Leaf", y[0], len(y), parent_attribute_size]
+
+    if not available_attributes:
+        label, count = majority_label(y, default_label)
+        return ["Leaf", label, count, parent_attribute_size]
+
+    candidates = candidate_attributes(available_attributes, rng, max_features)
+    if not candidates:
+        label, count = majority_label(y, default_label)
+        return ["Leaf", label, count, parent_attribute_size]
+
+    best_attribute = select_attribute_random(X, y, candidates, attribute_domains)
+    node = ["Attribute", f"att{best_attribute}"]
+    new_available = [att for att in available_attributes if att != best_attribute]
+    current_total = len(y)
+    majority_lbl, majority_count = majority_label(y, default_label)
+
+    for value in attribute_domains.get(best_attribute, []):
+        subset_X, subset_y = partition_dataset(X, y, best_attribute, value)
+        if not subset_y:
+            node.append(
+                ["Value", value, ["Leaf", majority_lbl, majority_count, current_total]]
+            )
+        else:
+            subtree = tdidt_random(
+                subset_X,
+                subset_y,
+                new_available,
+                attribute_domains,
+                default_label,
+                current_total,
+                rng=rng,
+                max_features=max_features
+            )
+            node.append(["Value", value, subtree])
+    return node
+
+
+def candidate_attributes(available_attributes, rng=None, max_features=None):
+    """
+    Select a random subset of candidate attributes for a split.
+    
+    Args:
+        available_attributes(list of int): The list of available attributes to consider for each split.
+        rng(Random): The random number generator to use for random attribute selection.
+        max_features(int): The maximum number of features to consider for each split.
+
+    Returns:
+        list of int: The list of candidate attributes.
+    """
+    if not available_attributes:
+        return []
+
+    if max_features is None:
+        candidate_count = math.ceil(math.sqrt(len(available_attributes)))
+    else:
+        candidate_count = min(max_features, len(available_attributes))
+    candidate_count = max(1, candidate_count)
+
+    if candidate_count >= len(available_attributes):
+        return list(available_attributes)
+
+    sampler = rng.sample if rng is not None else random.sample
+    return sampler(available_attributes, candidate_count)
+
+
+def select_attribute_random(X, y, candidate_attributes, attribute_domains):
+    """
+    Select the best attribute from a candidate subset using information gain.
+    
+    Args:
+        X(list of list of obj): The list of training instances (samples).
+            The shape of X is (n_train_samples, n_features)
+        y(list of obj): The target y values (parallel to X).
+            The shape of y is n_train_samples
+        candidate_attributes(list of int): The list of candidate attributes to consider for each split.
+        attribute_domains(dict): The domains of the attributes.
+
+    Returns:
+        int: The index of the best attribute.
+            The best attribute is the attribute with the highest information gain.
+    """
+    if not candidate_attributes:
+        raise ValueError("candidate_attributes must contain at least one attribute.")
+
+    best_attribute = candidate_attributes[0]
+    best_gain = -math.inf
+    base_entropy = entropy(y)
+
+    for attribute in candidate_attributes:
+        attr_entropy = attribute_entropy(X, y, attribute, attribute_domains)
+        gain = base_entropy - attr_entropy
+        if gain > best_gain + 1e-9 or (
+            abs(gain - best_gain) <= 1e-9 and attribute < best_attribute
+        ):
+            best_gain = gain
+            best_attribute = attribute
+    return best_attribute
+
+
 def predict_instance(instance, node, default_label):
     """
     Traverse a tree to predict a single instance.
+    
+    Args:
+        instance(list of obj): The instance to predict.
+        node(list): The decision tree represented as a nested list.
+        default_label(obj): The default label for the tree.
+
+    Returns:
+        obj: The predicted label for the instance.
     """
     if node is None:
         return default_label
@@ -185,6 +370,33 @@ def evaluate_feature_subset_cv(
 ):
     """
     Evaluate a feature subset via cross-validation and return common metrics.
+    
+    Args:
+        X(list of list of obj): The list of training instances (samples).
+            The shape of X is (n_train_samples, n_features)
+        y(list of obj): The target y values (parallel to X).
+            The shape of y is n_train_samples
+        header(list of str): The header of the dataset.
+        feature_subset(list of str): The list of features to consider for each split.
+        classifier_builder(function): The function to build the classifier.
+        n_splits(int): The number of splits for cross-validation.
+        stratify(bool): Whether to stratify the data for cross-validation.
+        positive_label(obj): The positive label for the classifier.
+        class_labels(list of obj): The list of class labels.
+
+    Returns:
+        dict: A dictionary containing the metrics for the feature subset.
+            The dictionary contains the following keys:
+            "features": The list of features used for the feature subset.
+            "accuracy": The accuracy of the classifier.
+            "error_rate": The error rate of the classifier.
+            "precision": The precision of the classifier.
+            "recall": The recall of the classifier.
+            "f1": The F1 score of the classifier.
+            "confusion_matrix": The confusion matrix of the classifier.
+            "labels": The list of class labels.
+            "y_true": The list of true labels.
+            "y_pred": The list of predicted labels.
     """
     if not feature_subset:
         raise ValueError("feature_subset must contain at least one attribute.")
