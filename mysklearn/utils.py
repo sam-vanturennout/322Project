@@ -1,5 +1,5 @@
 """
-Programmer: Cooper Braun
+Programmer: Cooper Braun & Sam Vanturennout
 Class: CPSC 322-01, Fall 2025
 Final Project
 12/1/25

@@ -1,3 +1,11 @@
+"""
+Programmer: Cooper Braun & Sam Vanturennout
+Class: CPSC 322-01, Fall 2025
+Final Project
+12/1/25
+Description: K-Nearest Neighbors classifier for our final project.
+"""
+
 class KNeighborsClassifier:
     """
     Represents a simple k nearest neighbors classifier.

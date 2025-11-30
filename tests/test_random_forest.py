@@ -1,3 +1,11 @@
+"""
+Programmer: Cooper Braun & Sam Vanturennout
+Class: CPSC 322-01, Fall 2025
+Final Project
+12/1/25
+Description: Tests for the MyRandomForestClassifier class.
+"""
+
 from collections import Counter
 
 from mysklearn import evaluation

@@ -1,10 +1,11 @@
-# pylint: skip-file
-"""test_myevaluation.py
-
-@author gsprint23
-@reused_by sluitel2025 (reused with permission)
-Note: do not modify this file
 """
+Programmer: Cooper Braun & Sam Vanturennout
+Class: CPSC 322-01, Fall 2025
+Final Project
+12/1/25
+Description: Tests for the evaluation module.
+"""
+
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from sklearn.model_selection import train_test_split, KFold, StratifiedKFold

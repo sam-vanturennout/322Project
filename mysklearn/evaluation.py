@@ -1,5 +1,5 @@
 """
-Programmer: Cooper Braun Sam Vanturennout
+Programmer: Cooper Braun & Sam Vanturennout
 Class: CPSC 322-01, Fall 2025
 Final Project
 12/1/25
@@ -447,7 +447,20 @@ def cross_val_predict_labels(X, y, clf, n_splits=10, stratified = True, random_s
     """
     Perform k-fold cross validation and return the predicted labels for each instance.
 
-   """
+    Args:
+        X(list of list of obj): The list of training instances (samples).
+            The shape of X is (n_train_samples, n_features)
+        y(list of obj): The target y values (parallel to X).
+            The shape of y is n_train_samples
+        clf(obj): The classifier to use for prediction.
+        n_splits(int): The number of splits for cross-validation.
+        stratified(bool): Whether to use stratified cross-validation.
+        random_state(int): The random state to use for reproducibility.
+
+    Returns:
+        list of obj: The predicted labels for each instance.
+            The shape of y_pred is (n_train_samples,).
+    """
     n_samples = len(X)
     y_pred = [None] * n_samples
     if stratified:

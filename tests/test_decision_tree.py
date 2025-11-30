@@ -1,3 +1,11 @@
+"""
+Programmer: Cooper Braun & Sam Vanturennout
+Class: CPSC 322-01, Fall 2025
+Final Project
+12/1/25
+Description: Tests for the DecisionTreeClassifier class.
+"""
+
 from mysklearn.decision_tree import DecisionTreeClassifier
 
 X_train_interview = [
