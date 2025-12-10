@@ -241,7 +241,7 @@ def tdidt_random(
         return ["Leaf", label, count, parent_attribute_size]
 
     best_attribute = select_attribute_random(X, y, candidates, attribute_domains)
-    node = ["Attribute", f"att{best_attribute}"]
+    node: list = ["Attribute", f"att{best_attribute}"]
     new_available = [att for att in available_attributes if att != best_attribute]
     current_total = len(y)
     majority_lbl, majority_count = majority_label(y, default_label)
@@ -457,8 +457,6 @@ def random_subsample(classifier, X, y, k=10, test_size=0.33, random_state=None):
     Returns:
         tuple: (average_accuracy, average_error_rate, all_accuracies)
     """
-    from mysklearn import evaluation
-    
     accuracies = []
     
     for i in range(k):
@@ -547,8 +545,6 @@ def bootstrap_method(classifier, X, y, k=10, random_state=None):
     Returns:
         tuple: (average_accuracy, average_error_rate, all_accuracies)
     """
-    from mysklearn import evaluation
-    
     accuracies = []
     
     for i in range(k):
