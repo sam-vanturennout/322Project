@@ -14,6 +14,11 @@ from collections import Counter
 from mysklearn import evaluation
 
 
+def label_encode(column):
+    unique_vals = sorted(set(column))
+    mapping = {v: i for i, v in enumerate(unique_vals)}
+    return [mapping[v] for v in column], mapping
+
 def project_columns(rows, column_indexes):
     """
     Project a dataset onto the specified column indexes.
